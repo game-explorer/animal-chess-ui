@@ -1,18 +1,12 @@
 <template>
     <div id="app">
-        <Chess></Chess>
+        <router-view></router-view>
     </div>
 </template>
 
 <script>
-    import Chess from './components/Chess.vue'
-
-
     export default {
         name: 'App',
-        components: {
-            Chess
-        }
     }
 </script>
 
