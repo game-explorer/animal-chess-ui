@@ -11,10 +11,8 @@ export default class WebSocketJS {
             switch (msg.type) {
                 case "create_room":
                     // 加入房间
-                    this.ws.send(`{"type":"join_room", "raw":{"room_id": ${msg.raw.room_id}}}`);
                     break;
                 case "game_status":
-
                     break;
                 default:
                     break;

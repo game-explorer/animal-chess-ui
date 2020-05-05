@@ -1,12 +1,17 @@
 <template>
     <div id="app">
-        <router-view></router-view>
+        <Chess></Chess>
     </div>
 </template>
 
 <script>
+    import Chess from "./components/Chess";
+
     export default {
         name: 'App',
+        components: {
+            Chess
+        }
     }
 </script>
 

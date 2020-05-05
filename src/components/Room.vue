@@ -6,11 +6,15 @@
             </van-button>
             <van-button
                     class="m-l-md"
-                    @click="joinRoom" type="primary">加入房间
+                    @click="showRoomInput" type="primary">加入房间
             </van-button>
-            <div class="van-hairline--top m-t-md">
+            <div class="van-hairline--top m-t-md" v-if="isShowInput">
                 <!-- 输入任意文本 -->
-                <van-field v-model="roomId" label="房间号"/>
+                <van-field v-model.number="roomId" label="房间号"/>
+                <van-button
+                        class="m-l-md"
+                        @click="enterRoom" type="primary">确认
+                </van-button>
             </div>
 
             <van-dialog v-model="show" title="进入房间?"
@@ -25,7 +29,7 @@
 </template>
 
 <script>
-    import {ROOM_STATUS} from "../assets/js/const";
+    import {SYS_STATUS} from "../assets/js/const";
 
     export default {
         name: 'room',
@@ -33,65 +37,38 @@
             return {
                 roomId: 0,
                 isShowInput: false,
-                show: false,
-                raw: {}
+                show: false
+            }
+        },
+        props: {
+            isShow: {
+                type: Boolean
             }
         },
         methods: {
+            // 创建房间
             createRoom() {
                 this.isShowInput = false;
-                console.log(this.$ws);
                 let params = {
-                    type: 'create_room'
+                    type: SYS_STATUS.CREATE_ROOM
                 };
                 this.$ws.send(JSON.stringify(params))
             },
-            joinRoom() {
+            // 显示输入房间号的input框
+            showRoomInput() {
                 this.isShowInput = true;
-                let params = {"type": "join_room", "raw": {"room_id": this.roomId}}
-                this.$ws.send(JSON.stringify(params))
             },
+            // 进入房间
             enterRoom() {
-                console.log('enterRoom');
-                let msg = {
-                    type: 'join_room',
-                    raw: {
-                        room_id: this.raw.room_id
-
-                    }
-                }
-                this.$ws.send(JSON.stringify(msg));
+                this.$emit('enterRoom', this.roomId);
             },
+            // 离开房间
             leaveRoom() {
-                console.log('leaveRoom')
+                this.$emit('leaveRoom');
             }
         },
         mounted() {
-            this.$ws.addEventListener('message', (event) => {
-                let {type, raw} = JSON.parse(event.data);
-                switch (type) {
-                    case 'game_status':
-                        switch (raw.status) {
-                            case ROOM_STATUS.WAIT:
-                                this.show = true;
-                                this.raw = raw;
-                                break;
-                            case ROOM_STATUS.READY:
-                                this.show = true;
-                                this.raw = raw;
-                                console.log('raw', raw)
-                                break;
-                            default:
-                                break
-                        }
-                        break;
-                    case 'join_room':
-                        break;
-                    default:
-                        break;
-                }
-
-            })
+            this.show = this.isShow
         }
     }
 </script>
@@ -102,6 +79,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        position: fixed;
+        left: 0;
+        top: 0;
+        background-color: #f7f8fa;
+        z-index: 9999;
     }
 
 </style>

@@ -1,23 +1,22 @@
 import Vue from 'vue'
 import App from './App.vue'
-import VueRouter from 'vue-router'
-import router from './ router/index'
 import WebSocket from "./assets/js/sockie";
 import {getAllQuery} from './assets/js/tool'
 import './assets/css/common.scss'
-import {Button, Field, Dialog} from 'vant';
+import {Button, Field, Dialog, Notify, Popup} from 'vant';
+
 Vue.use(Button);
 Vue.use(Field);
 Vue.use(Dialog);
+Vue.use(Notify);
+Vue.use(Popup);
 
-Vue.use(VueRouter);
 Vue.config.productionTip = false;
 
 const query = getAllQuery();
 console.log('query', query);
 Vue.prototype.$ws = new WebSocket(query.user_id);
 new Vue({
-    router,
     sockets: {
         connect: function () {
             console.log('socket connected')
