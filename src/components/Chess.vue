@@ -103,7 +103,7 @@
         components: {Room},
         methods: {
             lairCaveCls(y, x) {
-                if ((y === 10 && x === 4) || (y === 0 && x === 4)) {
+                if ((y === 12 && x === 4) || (y === 0 && x === 4)) {
                     return 'lair'
                 } else if ((y === 4 && x === 2) || (y === 4 && x === 6)
                     || (x === 2 && y === 8) || (x === 6 && y === 8)) {
@@ -333,6 +333,7 @@
                 left: 50%;
                 top: 50%;
                 transform: translate(-50%, -50%);
+                color:#fff;
             }
         }
     }
