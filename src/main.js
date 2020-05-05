@@ -2,34 +2,20 @@ import Vue from 'vue'
 import App from './App.vue'
 import VueRouter from 'vue-router'
 import router from './ router/index'
-
-
-var uid=1;
-var ws = new WebSocket("ws://192.168.1.80:9000/ws?player_id=" + uid);
-
-ws.onopen = function() {
-    console.log("Connection open ...");
-};
-
-ws.onmessage = function (event) {
-    let msg = JSON.parse(event.data)
-    switch (msg.type) {
-        case "create_room":
-            // 加入房间
-            ws.send(`{"type":"join_room", "raw":{"room_id": ${msg.raw.room_id}}}`);
-            break
-    }
-    console.log("Received Message: " + event.data);
-    // ws.close();
-};
-
-ws.onclose = function() {
-    console.log("Connection closed.");
-};
+import WebSocket from "./assets/js/sockie";
+import {getAllQuery} from './assets/js/tool'
+import './assets/css/common.scss'
+import {Button, Field, Dialog} from 'vant';
+Vue.use(Button);
+Vue.use(Field);
+Vue.use(Dialog);
 
 Vue.use(VueRouter);
 Vue.config.productionTip = false;
 
+const query = getAllQuery();
+console.log('query', query);
+Vue.prototype.$ws = new WebSocket(query.user_id);
 new Vue({
     router,
     sockets: {

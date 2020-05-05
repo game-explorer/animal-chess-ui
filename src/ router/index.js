@@ -12,11 +12,13 @@ const router = new VueRouter({
         },
         {
             path: '/room',
-            component: Room
+            component: Room,
+            name: 'room'
         },
         {
             path: "/game",
-            component: Chess
+            component: Chess,
+            name: 'game'
         }
     ]
 });
