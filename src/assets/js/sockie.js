@@ -7,7 +7,6 @@ export default class WebSocketJS {
         });
         this.ws.addEventListener('message', (event) => {
             let msg = JSON.parse(event.data);
-            console.log('msg', msg);
             switch (msg.type) {
                 case "create_room":
                     // 加入房间

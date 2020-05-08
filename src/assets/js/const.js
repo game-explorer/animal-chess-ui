@@ -9,4 +9,6 @@ export const SYS_STATUS = {
     GAME_STATUS: 'game_status',
     JOIN_ROOM: 'join_room',
     CREATE_ROOM: 'create_room',
+    ERROR: 'err',
+    GET_ROOM: 'get_room'
 }
