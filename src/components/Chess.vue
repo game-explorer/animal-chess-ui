@@ -20,27 +20,27 @@
                                  :pos="x+'-'+(y+2)"
                                  :class="[lairCaveCls(x,y+2),
                                  'pos-'+piecePos[x+'-'+(y+2)],
-                                 {
-                                     'is-selected':clickPos===x+'-'+(y+2),
+                                 {   'is-canMove':isCanMove(x+'-'+(y+2)),
+                                     'is-selected':toPointString(clickPos)===x+'-'+(y+2),
                                      'other-piece':otherPiecePos[x+'-'+(y+2)]
                                  }
                                  ]"
-                                 @click="clickCircleHandle(y+2,x,$event)"
-                                 v-if="y!==4"></div>
+                                 @click="clickCircleHandle(y+2,x,$event)"></div>
                             <div class="circle is-center"
                                  :class="['pos-'+piecePos[(x+1)+'-'+(y+1)],
                                    {
-                                     'is-selected':clickPos===(x+1)+'-'+(y+1),
-                                        'other-piece':otherPiecePos[(x+1)+'-'+(y+1)]
+                                      'is-canMove':isCanMove((x+1)+'-'+(y+1)),
+                                     'is-selected':toPointString(clickPos)===(x+1)+'-'+(y+1),
+                                      'other-piece':otherPiecePos[(x+1)+'-'+(y+1)]
                                  }
                                  ]"
                                  :pos="(x+1)+'-'+(y+1)"
                                  @click="clickCircleHandle(y+1,x+1,$event)"></div>
                             <div class="circle is-bottom-left"
-                                 v-if="y!==6"
                                  :class="[lairCaveCls(x,y),'pos-'+piecePos[x+'-'+y],
                                  {
-                                     'is-selected':clickPos===x+'-'+y,
+                                     'is-canMove':isCanMove(x+'-'+y),
+                                     'is-selected':toPointString(clickPos)===x+'-'+y,
                                      'other-piece':otherPiecePos[x+'-'+y]
                                  }]"
                                  @click="clickCircleHandle(y,x,$event)"
@@ -49,15 +49,16 @@
                                  :pos="(x+2)+'-'+(y+2)"
                                  :class="['pos-'+piecePos[(x+2)+'-'+(y+2)],
                                  {
-                                     'is-selected':clickPos===(x+2)+'-'+(y+2),
+                                     'is-canMove':isCanMove((x+2)+'-'+(y+2)),
+                                     'is-selected':toPointString(clickPos)===(x+2)+'-'+(y+2),
                                      'other-piece':otherPiecePos[(x+2)+'-'+(y+2)]
                                  }]"
-                                 @click="clickCircleHandle(y+2,x+2,$event)"
-                                 v-if="y!==4"></div>
+                                 @click="clickCircleHandle(y+2,x+2,$event)"></div>
                             <div class="circle is-bottom-right"
-                                 v-if="y!==6" :class="['pos-'+piecePos[(x+2)+'-'+y],
+                                 :class="['pos-'+piecePos[(x+2)+'-'+y],
                                  {
-                                     'is-selected':clickPos===(x+2)+'-'+y,
+                                     'is-canMove':isCanMove((x+2)+'-'+y),
+                                     'is-selected':toPointString(clickPos)===(x+2)+'-'+y,
                                      'other-piece':otherPiecePos[(x+2)+'-'+y]
                                  }]"
                                  @click="clickCircleHandle(y,x+2,$event)"></div>
@@ -126,12 +127,83 @@
                 gameStatus: 2, // 游戏阶段 准备（摆放棋子）、下棋阶段,
                 clickPos: null,
                 // 另一方的棋子摆放位置
-                otherPiecePos: {}
+                otherPiecePos: {},
+                // canMovePos: []
 
+            }
+        },
+        computed: {
+            canMovePos() {
+                if (!this.clickPos) return [];
+                let {x, y} = this.clickPos;
+                let pointer = this.clickPos.x + '-' + this.clickPos.y;
+                //    2.计算可以当前棋子可以走的点
+
+                // x:奇数点：只能走对角线
+
+                // x:（2、4、6）&y!=(0,12)可以上下左右斜杆
+
+                // x:0 & y!(0,12):上、下、右、右下对角线、右上对角线
+                // x:8 & y!(0,12):上、下、左 左下对角线、左上对角线
+
+                // x:0 & y=0:走右侧、上侧、右下对角线
+                // x:0 & y=12 下、右侧 左上对角线
+
+                // x:8 & y=0:左、上、右下对角线
+                // x:8 & 12：左、下 右上对角线
+
+                // 1,1
+                let moveArr = [];
+                let right = (x + 2) + '-' + y;
+                let left = (x - 2) + '-' + y;
+                let top = x + '-' + (y + 2);
+                let bottom = x + '-' + (y - 2);
+                let leftTop = (x - 1) + '-' + (y - 1);
+                let leftBottom = (x - 1) + '-' + (y + 1);
+                let rightTop = (x + 1) + '-' + (y - 1);
+                let rightBottom = (x + 1) + '-' + (y + 1);
+
+                if (x % 2 === 1) {
+                    moveArr = [leftTop, leftBottom, rightTop, rightBottom];
+                } else if (x !== 0 && x !== 8 && y !== 0 && y !== 12) {
+                    moveArr = [
+                        top, bottom, left, right, rightTop, leftTop, leftBottom, rightTop
+                    ]
+                } else if (x === 0 && y !== 0 && y !== 12) {
+                    moveArr = [top, bottom, right, rightTop, rightBottom]
+                } else if (x === 8 && y !== 0 && y !== 12) {
+                    moveArr = [top, bottom, left, leftTop, leftBottom]
+                } else {
+                    switch (pointer) {
+                        case '0-0':
+                            moveArr = [top, right, rightTop];
+                            break;
+                        case '0-12':
+                            moveArr = [bottom, right, rightBottom];
+                            break;
+                        case '8-0':
+                            moveArr = [left, top, leftTop];
+                            break;
+                        case '8-12':
+                            moveArr = [left, bottom, leftBottom];
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                moveArr = moveArr.filter((item) => {
+                    return !this.piecePos[item]
+                });
+                return moveArr;
             }
         },
         components: {Room},
         methods: {
+            isCanMove(point) {
+                return this.canMovePos.find(item => {
+                    return item === point;
+                })
+            },
             lairCaveCls(x, y) {
                 if ((y === 12 && x === 4) || (y === 0 && x === 4)) {
                     return 'lair'
@@ -191,64 +263,28 @@
                     case GAME_STATUS.PLAYING:
                         let hasPiece = this.piecePos[pointer];
                         console.log('hasPiece', hasPiece);
-                        if (hasPiece || hasPiece === 0) {
+                        if (hasPiece) {
                             //    1.当前棋子添加提起来的效果
-                            this.clickPos = pointer;
-                            //    2.计算可以当前棋子可以走的点
-
-                            // x:奇数点：只能走对角线
-
-                            // x:（2、4、6）&y!=(0,12)可以上下左右斜杆
-
-                            // x:0 & y!(0,12):上、下、右、右下对角线、右上对角线
-                            // x:8 & y!(0,12):上、下、左 左下对角线、左上对角线
-
-                            // x:0 & y=0:走右侧、上侧、右下对角线
-                            // x:0 & y=12 下、右侧 左上对角线
-
-                            // x:8 & y=0:左、上、右下对角线
-                            // x:8 & 12：左、下 右上对角线
-
-                            // 1,1
-                            let moveArr = [];
-                            let right = (x + 2) + '-' + y;
-                            let left = (x - 2) + '-' + y;
-                            let top = x + '-' + (y + 2);
-                            let bottom = x + '-' + (y - 2);
-                            let leftTop = (x - 1) + '-' + (y - 1);
-                            let leftBottom = (x - 1) + '-' + (y + 1);
-                            let rightTop = (x + 1) + '-' + (y - 1);
-                            let rightBottom = (x + 1) + '-' + (y + 1);
-
-                            if (x % 2 === 1) {
-                                moveArr = [leftTop, leftBottom, rightTop, rightBottom];
-                            } else if (x !== 0 && x !== 8 && y !== 0 && y !== 12) {
-                                moveArr = [
-                                    top, bottom, left, right, rightTop, leftTop, leftBottom, rightTop
-                                ]
-                            } else if (x === 0 && y !== 0 && y !== 12) {
-                                moveArr = [top, bottom, right, rightTop, rightBottom]
-                            } else if (x === 8 && y !== 0 && y !== 12) {
-                                moveArr = [top, bottom, left, leftTop, leftBottom]
+                            this.clickPos = {
+                                x: x,
+                                y: y
+                            };
+                        } else {
+                            if (!this.isCanMove(pointer)) {
+                                this.clickPos = null;
+                                // this.canMovePos = [];
                             } else {
-                                switch (pointer) {
-                                    case '0-0':
-                                        moveArr = [top, right, rightTop];
-                                        break;
-                                    case '0-12':
-                                        moveArr = [bottom, right, rightBottom];
-                                        break;
-                                    case '8-0':
-                                        moveArr = [left, top, leftTop];
-                                        break;
-                                    case '8-12':
-                                        moveArr = [left, bottom, leftBottom];
-                                        break;
-                                    default:
-                                        break;
-                                }
+                                console.log('moving piece');
+                                //  走棋
+                                let msg = {
+                                    type: SYS_STATUS.MOVE,
+                                    raw: {
+                                        from: this.toPointString(this.clickPos),
+                                        to: pointer
+                                    }
+                                };
+                                this.$ws.send(JSON.stringify(msg));
                             }
-                            console.log('moveArr', moveArr);
                         }
                         break;
                     default:
@@ -256,6 +292,7 @@
                         break;
                 }
             },
+
             // 选择一个棋子
             selectPieceHandle(index) {
                 this.piecePos[this.curPos] = this.pieces[index];
@@ -265,6 +302,13 @@
             },
             getRoom() {
                 this.$ws.send(JSON.stringify({type: 'get_room'}))
+            },
+            toPointString(point) {
+                if (!point) {
+                    return ''
+                } else {
+                    return point.x + '-' + point.y;
+                }
             }
         },
         mounted() {
@@ -354,6 +398,14 @@
                             this.otherPiecePos = raw.pieces;
                         }
                         break;
+                    case SYS_STATUS.MOVE:
+                        let animal = this.piecePos[raw.from];
+                        console.log('animal', animal);
+                        delete this.piecePos[raw.from];
+                        // this.piecePos[raw.to] = animal;
+                        this.$set(this.piecePos, raw.to, animal);
+                        this.clickPos = null;
+                        break;
                     //    报错
                     case SYS_STATUS.ERROR:
                         this.$notify({
@@ -385,6 +437,7 @@
 </script>
 <style lang="scss">
     $board-color: #999;
+    $is-canMove: #7aff6d;
     $pos-list: (pos-1, '鼠', skyblue),
             (pos-2, '猫', pink),
             (pos-3, '狗', #ff92c1),
@@ -500,6 +553,10 @@
                 /*border: 2px solid #42b983;*/
                 box-shadow: 0 3px 6px 5px #42b983;
             }
+
+            &.is-canMove {
+                border: 2px solid $is-canMove;
+            }
         }
     }
 
@@ -538,12 +595,28 @@
                     background: orange;
                 }
             }
+
+            &:last-child {
+                .is-bottom-right,
+                .is-bottom-left {
+                    background: transparent;
+                    box-shadow: none;
+                }
+            }
         }
     }
 
     .p1 {
         .row {
             @include circle(red);
+
+            &:first-child {
+                .is-top-left,
+                .is-top-right {
+                    background: transparent;
+                    box-shadow: none;
+                }
+            }
 
             &:last-child {
                 .circle.is-bottom-left,
