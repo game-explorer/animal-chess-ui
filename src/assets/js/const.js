@@ -1,8 +1,9 @@
 export const GAME_STATUS = {
-    WAIT: 1,
-    READY: 2,
-    PLAYING: 3,
-    END: 4
+    NO: 0, // 不在游戏中
+    WAIT: 1, // 等待进入游戏
+    READY: 2, // 准备摆放棋盘
+    PLAYING: 3, // 开启下棋
+    END: 4 // 结束游戏
 }
 
 export const SYS_STATUS = {
@@ -10,5 +11,9 @@ export const SYS_STATUS = {
     JOIN_ROOM: 'join_room',
     CREATE_ROOM: 'create_room',
     ERROR: 'err',
-    GET_ROOM: 'get_room'
+    GET_ROOM: 'get_room',
+    START: 'start',
+    TIME_TO: 'time_to',
+    MOVE: 'move',
+    SET_PIECE: 'set_piece'
 }

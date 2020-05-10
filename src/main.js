@@ -3,13 +3,14 @@ import App from './App.vue'
 import WebSocket from "./assets/js/sockie";
 import {getAllQuery} from './assets/js/tool'
 import './assets/css/common.scss'
-import {Button, Field, Dialog, Notify, Popup} from 'vant';
+import {Button, Field, Dialog, Notify, Popup,NoticeBar} from 'vant';
 
 Vue.use(Button);
 Vue.use(Field);
 Vue.use(Dialog);
 Vue.use(Notify);
 Vue.use(Popup);
+Vue.use(NoticeBar);
 
 Vue.config.productionTip = false;
 

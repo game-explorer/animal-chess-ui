@@ -4,97 +4,71 @@
             当前为：{{userInfo.camp}}
         </div>
         <div class="chess-board">
-            <!--            <div class="part p2" :class="{'is-current':userInfo.camp==='p2'}">-->
-            <!--                <div class="row" v-for="i in [10,8,6]" :key="'red-'+i">-->
-            <!--                    <div class="cell" v-for="j in [0,2,4,6]" :key="'red-'+j" :pos="i+'-'+j">-->
-            <!--                        <span class="text">{{i}}-{{j}}</span>-->
-            <!--                        <div class="divide a"></div>-->
-            <!--                        <div class="divide b"></div>-->
-            <!--                        <template>-->
-            <!--                            <div class="circle is-top-left"-->
-            <!--                                 @click="showPieceHandle(i+2,j,'top-left')"-->
-            <!--                                 :class="lairCaveCls(i+2,j)"></div>-->
-            <!--                            <div class="circle is-center"-->
-            <!--                                 @click="showPieceHandle(i+1,j+1,'center')"></div>-->
-            <!--                            <div class="circle is-bottom-left"-->
-            <!--                                 @click="showPieceHandle"-->
-            <!--                                 v-if="i!==6"></div>-->
-            <!--                            <div class="circle is-top-right"-->
-            <!--                                 @click="showPieceHandle(i+2,j+2,'top-right')"></div>-->
-            <!--                            <div class="circle is-bottom-right"-->
-            <!--                                 @click="showPieceHandle"-->
-            <!--                                 v-if="i!==6"></div>-->
-            <!--                        </template>-->
-            <!--                    </div>-->
-            <!--                </div>-->
-            <!--            </div>-->
-            <!--            <div class="part p1" :class="{'is-current':userInfo.camp==='p1'}">-->
-            <!--                <div class="row" v-for="i in [4,2,0]" :key="i">-->
-            <!--                    <div class="cell" v-for="j in [0,2,4,6]" :key="j">-->
-            <!--                        <span class="text">{{j}}-{{i}}</span>-->
-            <!--                        <div class="divide a"></div>-->
-            <!--                        <div class="divide b"></div>-->
-            <!--                        <template>-->
-            <!--                            <div class="circle is-top-left"-->
-            <!--                                 :pos="j+'-'+(i+2)"-->
-            <!--                                 :class="lairCaveCls(i+2,j)"-->
-            <!--                                 @click="showPieceHandle(i+2,j,'top-left')"-->
-            <!--                                 v-if="i!==4"></div>-->
-            <!--                            <div class="circle is-center"-->
-            <!--                                 :pos="(j+1)+'-'+(i+1)"-->
-            <!--                                 @click="showPieceHandle(i+1,j+1,'center')"></div>-->
-            <!--                            <div class="circle is-bottom-left"-->
-            <!--                                 :class="lairCaveCls(i,j)"-->
-            <!--                                 @click="showPieceHandle(i,j,'bottom-left')"-->
-            <!--                            ></div>-->
-            <!--                            <div class="circle is-top-right"-->
-            <!--                                 :pos="(j+2)+'-'+(i+2)"-->
-            <!--                                 @click="showPieceHandle(i+2,j+2,'top-right')"-->
-            <!--                                 v-if="i!==4"></div>-->
-            <!--                            <div class="circle is-bottom-right"-->
-            <!--                                 @click="showPieceHandle(i,j+2,'bottom-right')"></div>-->
-            <!--                        </template>-->
-            <!--                    </div>-->
-            <!--                </div>-->
-            <!--            </div>-->
-
             <div class="part"
                  v-for="item in chessBoard"
                  :key="item.camp"
-                 :class="[item.camp,{'is-current':userInfo.camp===item.camp}]">
-                <div class="row" v-for="i in item.y" :key="i">
-                    <div class="cell" v-for="j in [0,2,4,6]" :key="j">
-                        <span class="text">{{j}}-{{i}}</span>
+                 :class="[item.camp,
+                 {'is-otherCamp':userInfo.camp!==item.camp,
+                 'ready-status':gameStatus===GAME_STATUS.READY}]">
+                <div class="row" v-for="y in item.y" :key="y">
+                    <div class="cell" v-for="x in [0,2,4,6]" :key="x">
+                        <span class="text">{{x}}-{{y}}</span>
                         <div class="divide a"></div>
                         <div class="divide b"></div>
                         <template>
                             <div class="circle is-top-left"
-                                 :pos="j+'-'+(i+2)"
-                                 :class="[lairCaveCls(i+2,j),'pos-'+piecePos[j+'-'+(i+2)]]"
-                                 @click="showPieceHandle(i+2,j,'top-left')"
-                                 v-if="i!==4"></div>
+                                 :pos="x+'-'+(y+2)"
+                                 :class="[lairCaveCls(x,y+2),
+                                 'pos-'+piecePos[x+'-'+(y+2)],
+                                 {
+                                     'is-selected':clickPos===x+'-'+(y+2),
+                                     'other-piece':otherPiecePos[x+'-'+(y+2)]
+                                 }
+                                 ]"
+                                 @click="clickCircleHandle(y+2,x,$event)"
+                                 v-if="y!==4"></div>
                             <div class="circle is-center"
-                                 :class="['pos-'+piecePos[(j+1)+'-'+(i+1)]]"
-                                 :pos="(j+1)+'-'+(i+1)"
-                                 @click="showPieceHandle(i+1,j+1,'center')"></div>
+                                 :class="['pos-'+piecePos[(x+1)+'-'+(y+1)],
+                                   {
+                                     'is-selected':clickPos===(x+1)+'-'+(y+1),
+                                        'other-piece':otherPiecePos[(x+1)+'-'+(y+1)]
+                                 }
+                                 ]"
+                                 :pos="(x+1)+'-'+(y+1)"
+                                 @click="clickCircleHandle(y+1,x+1,$event)"></div>
                             <div class="circle is-bottom-left"
-                                 v-if="i!==6"
-                                 :class="[lairCaveCls(i,j),'pos-'+piecePos[j+'-'+i]]"
-                                 @click="showPieceHandle(i,j,'bottom-left')"
+                                 v-if="y!==6"
+                                 :class="[lairCaveCls(x,y),'pos-'+piecePos[x+'-'+y],
+                                 {
+                                     'is-selected':clickPos===x+'-'+y,
+                                     'other-piece':otherPiecePos[x+'-'+y]
+                                 }]"
+                                 @click="clickCircleHandle(y,x,$event)"
                             ></div>
                             <div class="circle is-top-right"
-                                 :pos="(j+2)+'-'+(i+2)"
-                                 :class="['pos-'+piecePos[(j+2)+'-'+(i+2)]]"
-                                 @click="showPieceHandle(i+2,j+2,'top-right')"
-                                 v-if="i!==4"></div>
+                                 :pos="(x+2)+'-'+(y+2)"
+                                 :class="['pos-'+piecePos[(x+2)+'-'+(y+2)],
+                                 {
+                                     'is-selected':clickPos===(x+2)+'-'+(y+2),
+                                     'other-piece':otherPiecePos[(x+2)+'-'+(y+2)]
+                                 }]"
+                                 @click="clickCircleHandle(y+2,x+2,$event)"
+                                 v-if="y!==4"></div>
                             <div class="circle is-bottom-right"
-                                 v-if="i!==6"
-                                 :class="['pos-'+piecePos[i+'-'+(j+2)]]"
-                                 @click="showPieceHandle(i,j+2,'bottom-right')"></div>
+                                 v-if="y!==6" :class="['pos-'+piecePos[(x+2)+'-'+y],
+                                 {
+                                     'is-selected':clickPos===(x+2)+'-'+y,
+                                     'other-piece':otherPiecePos[(x+2)+'-'+y]
+                                 }]"
+                                 @click="clickCircleHandle(y,x+2,$event)"></div>
                         </template>
                     </div>
                 </div>
             </div>
+        </div>
+        <div class="camp-list">
+            <div class="camp-item camp-item--1">p2</div>
+            <div class="camp-item camp-item--2">p1</div>
         </div>
         <Room :isShow="isShow"
               v-if="isRoom"
@@ -108,7 +82,7 @@
                         @click="selectPieceHandle(index)"
                         class="piece-item"
                         v-for="(item,index) in pieces" :key="index">
-                    {{animalMap[item]}}
+                    {{animalMap[item]}}{{item}}
                 </li>
             </ul>
         </van-popup>
@@ -123,6 +97,7 @@
         name: "chess",
         data() {
             return {
+                GAME_STATUS,
                 chessBoard: [
                     {
                         camp: 'p2',
@@ -142,19 +117,22 @@
                 userInfo: {
                     camp: 'p1'
                 },
-                pieces: [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7],
+                pieces: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8],
                 userId: 0,
                 piecePos: {},
-                animalMap: ['鼠', '猫', '狗', '狼', '豹', '虎', '狮', '象'],
+                animalMap: ['', '鼠', '猫', '狗', '狼', '豹', '虎', '狮', '象'],
                 lairPos: ['4-0', '4-12'],
                 cavePos: ['2-4', '2-8', '6-4', '6-8'],
-                process: 'ready' // 游戏阶段 准备（摆放棋子）、下棋阶段,
+                gameStatus: 2, // 游戏阶段 准备（摆放棋子）、下棋阶段,
+                clickPos: null,
+                // 另一方的棋子摆放位置
+                otherPiecePos: {}
 
             }
         },
         components: {Room},
         methods: {
-            lairCaveCls(y, x) {
+            lairCaveCls(x, y) {
                 if ((y === 12 && x === 4) || (y === 0 && x === 4)) {
                     return 'lair'
                 } else if ((y === 4 && x === 2) || (y === 4 && x === 6)
@@ -181,33 +159,102 @@
             leaveRoom() {
                 this.isShow = true;
             },
-            // 显示棋子弹窗
-            showPieceHandle(y, x, pos) {
-                // 棋子已经摆放完毕
-                if (this.pieces.length === 0) {
-                    return
-                }
-                console.log('showPieceHandle', x, y, x + '-' + y, pos);
-                let pointer = x + '-' + y;
+            // 点击原点、或者棋子
+            clickCircleHandle(y, x, e) {
+                let pointer = `${x}-${y}`;
+                console.log('pointer', pointer);
+                switch (this.gameStatus) {
+                    case GAME_STATUS.READY:
+                        // 棋子已经摆放完毕
+                        if (this.pieces.length === 0) {
+                            return
+                        }
+                        // 特殊的位置不能摆棋子
+                        if (this.lairPos.includes(pointer) || this.cavePos.includes(pointer)) {
+                            this.$notify({
+                                type: 'warning',
+                                message: '兽穴或则山洞不能放旗子！'
+                            });
+                            return;
+                        }
+                        // 有棋子的地方不能放棋子
+                        if (this.piecePos[pointer]) {
+                            this.$notify({
+                                type: 'warning',
+                                message: '已经有棋子啦！'
+                            });
+                            return;
+                        }
+                        this.curPos = pointer;
+                        this.isShowPiece = true;
+                        break;
+                    case GAME_STATUS.PLAYING:
+                        let hasPiece = this.piecePos[pointer];
+                        console.log('hasPiece', hasPiece);
+                        if (hasPiece || hasPiece === 0) {
+                            //    1.当前棋子添加提起来的效果
+                            this.clickPos = pointer;
+                            //    2.计算可以当前棋子可以走的点
 
-                // 特殊的位置不能摆棋子
-                if (this.lairPos.includes(pointer) || this.cavePos.includes(pointer)) {
-                    this.$notify({
-                        type: 'warning',
-                        message: '兽穴或则山洞不能放旗子！'
-                    });
-                    return;
+                            // x:奇数点：只能走对角线
+
+                            // x:（2、4、6）&y!=(0,12)可以上下左右斜杆
+
+                            // x:0 & y!(0,12):上、下、右、右下对角线、右上对角线
+                            // x:8 & y!(0,12):上、下、左 左下对角线、左上对角线
+
+                            // x:0 & y=0:走右侧、上侧、右下对角线
+                            // x:0 & y=12 下、右侧 左上对角线
+
+                            // x:8 & y=0:左、上、右下对角线
+                            // x:8 & 12：左、下 右上对角线
+
+                            // 1,1
+                            let moveArr = [];
+                            let right = (x + 2) + '-' + y;
+                            let left = (x - 2) + '-' + y;
+                            let top = x + '-' + (y + 2);
+                            let bottom = x + '-' + (y - 2);
+                            let leftTop = (x - 1) + '-' + (y - 1);
+                            let leftBottom = (x - 1) + '-' + (y + 1);
+                            let rightTop = (x + 1) + '-' + (y - 1);
+                            let rightBottom = (x + 1) + '-' + (y + 1);
+
+                            if (x % 2 === 1) {
+                                moveArr = [leftTop, leftBottom, rightTop, rightBottom];
+                            } else if (x !== 0 && x !== 8 && y !== 0 && y !== 12) {
+                                moveArr = [
+                                    top, bottom, left, right, rightTop, leftTop, leftBottom, rightTop
+                                ]
+                            } else if (x === 0 && y !== 0 && y !== 12) {
+                                moveArr = [top, bottom, right, rightTop, rightBottom]
+                            } else if (x === 8 && y !== 0 && y !== 12) {
+                                moveArr = [top, bottom, left, leftTop, leftBottom]
+                            } else {
+                                switch (pointer) {
+                                    case '0-0':
+                                        moveArr = [top, right, rightTop];
+                                        break;
+                                    case '0-12':
+                                        moveArr = [bottom, right, rightBottom];
+                                        break;
+                                    case '8-0':
+                                        moveArr = [left, top, leftTop];
+                                        break;
+                                    case '8-12':
+                                        moveArr = [left, bottom, leftBottom];
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                            console.log('moveArr', moveArr);
+                        }
+                        break;
+                    default:
+                        console.error('click circle other status', this.gameStatus);
+                        break;
                 }
-                // 有棋子的地方不能放棋子
-                if (this.piecePos[pointer] || this.piecePos[pointer] === 0) {
-                    this.$notify({
-                        type: 'warning',
-                        message: '已经有棋子啦！'
-                    });
-                    return;
-                }
-                this.curPos = pointer;
-                this.isShowPiece = true;
             },
             // 选择一个棋子
             selectPieceHandle(index) {
@@ -228,6 +275,10 @@
                     // 游戏状态
                     case SYS_STATUS.GAME_STATUS:
                         switch (raw.status) {
+                            case GAME_STATUS.NO:
+                                // this.isShow = true;
+                                this.isRoom = true;
+                                break;
                             case GAME_STATUS.WAIT:
                             case GAME_STATUS.READY:
                             case GAME_STATUS.PLAYING:
@@ -243,19 +294,36 @@
                     case SYS_STATUS.JOIN_ROOM:
                         this.getRoom();
                         switch (raw.status) {
+                            case GAME_STATUS.WAIT:
+                                this.isRoom = false;
+                                if (this.userId === raw.player_id) {
+                                    this.userInfo = raw;
+                                }
+                                this.$notify({type: 'primary', message: '等待队友！'});
+                                break;
                             case GAME_STATUS.READY:
+                                this.isRoom = false;
+                                if (this.userId === raw.player_id) {
+                                    this.userInfo = raw;
+                                }
+                                this.$notify({type: 'primary', message: '游戏开始，请摆放棋子！'});
+                                break;
                             case GAME_STATUS.PLAYING:
                                 this.isRoom = false;
                                 if (this.userId === raw.player_id) {
                                     this.userInfo = raw;
                                 }
-
-                                this.$notify({type: 'primary', message: '游戏开始，请摆放棋子！'});
+                                this.gameStatus = GAME_STATUS.PLAYING;
                                 break;
                             default:
-                                console.error('bug')
+                                console.error('bug', this.gameStatus);
                                 break;
                         }
+                        break;
+                    case SYS_STATUS.START:
+                        this.$notify({type: 'primary', message: '游戏开始！'});
+                        break;
+                    case SYS_STATUS.TIME_TO:
                         break;
                     //    创建房间
                     case SYS_STATUS.CREATE_ROOM:
@@ -264,8 +332,27 @@
                     //    获取ROOM
                     case SYS_STATUS.GET_ROOM:
                         this.raw = raw;
-                        this.piecePos = raw.table_pieces[this.userInfo.camp].pieces
+                        if (!raw.table_pieces['p1']) {
+                            raw.table_pieces['p1'] = {
+                                pieces: {}
+                            }
+                        }
+                        if (!raw.table_pieces['p2']) {
+                            raw.table_pieces['p2'] = {
+                                pieces: {}
+                            }
+                        }
                         console.log('raw', raw);
+                        this.piecePos = this.userInfo.camp === 'p1' ? raw.table_pieces['p1'].pieces : raw.table_pieces['p2'].pieces;
+                        this.otherPiecePos = this.userInfo.camp === 'p1' ? raw.table_pieces['p2'].pieces : raw.table_pieces['p1'].pieces;
+                        console.log('raw', raw);
+                        break;
+                    case SYS_STATUS.SET_PIECE:
+                        if (this.userId === raw.player_id) {
+
+                        } else {
+                            this.otherPiecePos = raw.pieces;
+                        }
                         break;
                     //    报错
                     case SYS_STATUS.ERROR:
@@ -282,10 +369,10 @@
         },
         watch: {
             pieces(n) {
-                if (n.length === 14) {
+                if (n.length === 0) {
                     console.log('棋子已经放置完成！');
                     let msg = {
-                        type: "set-piece",
+                        type: SYS_STATUS.SET_PIECE,
                         raw: {
                             pieces: this.piecePos
                         }
@@ -298,14 +385,14 @@
 </script>
 <style lang="scss">
     $board-color: #999;
-    $pos-list: (pos-0, '鼠', skyblue),
-            (pos-1, '猫', pink),
-            (pos-2, '狗', #ff92c1),
-            (pos-3, '狼', #ff76d3),
-            (pos-4, '豹', #42b983),
-            (pos-5, '虎', gray),
-            (pos-6, '狮', green),
-            (pos-7, '象', orange);
+    $pos-list: (pos-1, '鼠', skyblue),
+            (pos-2, '猫', pink),
+            (pos-3, '狗', #ff92c1),
+            (pos-4, '狼', #ff76d3),
+            (pos-5, '豹', #42b983),
+            (pos-6, '虎', gray),
+            (pos-7, '狮', green),
+            (pos-8, '象', orange);
 
     .chess-board {
         width: 60vh;
@@ -322,8 +409,12 @@
         width: 100%;
         height: 100%;
         flex-direction: column;
-    }
 
+        &.is-otherCamp.ready-status {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+    }
 
     .row {
         display: flex;
@@ -404,6 +495,11 @@
                 right: 0;
                 transform: translate(50%, 50%);
             }
+
+            &.is-selected {
+                /*border: 2px solid #42b983;*/
+                box-shadow: 0 3px 6px 5px #42b983;
+            }
         }
     }
 
@@ -425,6 +521,10 @@
 
     @each $cls, $text, $bg in $pos-list {
         @include animal-piece($cls, $text, $bg)
+    }
+
+    .other-piece {
+        background-color: skyblue !important;
     }
 
 
@@ -499,5 +599,28 @@
             color: #fff;
         }
     }
+
+    .camp-list {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0;
+    }
+
+    .camp-item {
+        position: absolute;
+        right: 10px;
+    }
+
+    .camp-item--1 {
+        position: absolute;
+        top: 20%;
+    }
+
+    .camp-item--2 {
+        position: absolute;
+        bottom: 20%;
+    }
+
 
 </style>
