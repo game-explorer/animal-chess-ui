@@ -3,7 +3,7 @@
         <div class="cur-user">
             当前为：{{userInfo.camp}}
         </div>
-        <div class="chess-board">
+        <div class="chess-board" :class="['current-camp-'+this.userInfo.camp]">
             <div class="part"
                  v-for="item in chessBoard"
                  :key="item.camp"
@@ -68,8 +68,13 @@
             </div>
         </div>
         <div class="camp-list">
-            <div class="camp-item camp-item--1">p2</div>
-            <div class="camp-item camp-item--2">p1</div>
+            <div class="camp-item camp-item--1"
+                 :class="{'is-shouldMove':isShouldMoveCamp==='p2'}"
+            >p2
+            </div>
+            <div class="camp-item camp-item--2"
+                 :class="{'is-shouldMove':isShouldMoveCamp==='p1'}">p1
+            </div>
         </div>
         <Room :isShow="isShow"
               v-if="isRoom"
@@ -90,7 +95,7 @@
     </div>
 </template>
 <script>
-    import {GAME_STATUS, SYS_STATUS} from "../assets/js/const";
+    import {GAME_STATUS, SYS_STATUS, FIT_STATUS, P1, P2} from "../assets/js/const";
     import Room from '../components/Room'
     import {getAllQuery} from '../assets/js/tool'
 
@@ -101,11 +106,11 @@
                 GAME_STATUS,
                 chessBoard: [
                     {
-                        camp: 'p2',
+                        camp: P2,
                         y: [10, 8, 6]
                     },
                     {
-                        camp: 'p1',
+                        camp: P1,
                         y: [4, 2, 0]
                     }
                 ],
@@ -116,7 +121,7 @@
                 isShowPiece: false,
                 // 用户信息
                 userInfo: {
-                    camp: 'p1'
+                    camp: P1
                 },
                 pieces: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8],
                 userId: 0,
@@ -129,6 +134,7 @@
                 // 另一方的棋子摆放位置
                 otherPiecePos: {},
                 // canMovePos: []
+                isShouldMovePlayer: 0
 
             }
         },
@@ -167,7 +173,7 @@
                     moveArr = [leftTop, leftBottom, rightTop, rightBottom];
                 } else if (x !== 0 && x !== 8 && y !== 0 && y !== 12) {
                     moveArr = [
-                        top, bottom, left, right, rightTop, leftTop, leftBottom, rightTop
+                        top, bottom, left, right, rightTop, leftTop, leftBottom, rightBottom
                     ]
                 } else if (x === 0 && y !== 0 && y !== 12) {
                     moveArr = [top, bottom, right, rightTop, rightBottom]
@@ -191,10 +197,23 @@
                             break;
                     }
                 }
+                console.log('moveArr', moveArr);
                 moveArr = moveArr.filter((item) => {
                     return !this.piecePos[item]
                 });
                 return moveArr;
+            },
+            isShouldMoveCamp() {
+                let currentCamp = this.userInfo.camp;
+                let otherCamp = currentCamp === 'p1' ? 'p2' : 'p1';
+                if (this.isShouldMovePlayer === this.userInfo.player_id) {
+                    return currentCamp;
+                }
+                return otherCamp
+            },
+            otherCamp() {
+                let currentCamp = this.userInfo.camp;
+                return currentCamp === P1 ? P2 : P1
             }
         },
         components: {Room},
@@ -368,6 +387,7 @@
                         this.$notify({type: 'primary', message: '游戏开始！'});
                         break;
                     case SYS_STATUS.TIME_TO:
+                        this.isShouldMovePlayer = raw.player_id;
                         break;
                     //    创建房间
                     case SYS_STATUS.CREATE_ROOM:
@@ -386,10 +406,8 @@
                                 pieces: {}
                             }
                         }
-                        console.log('raw', raw);
                         this.piecePos = this.userInfo.camp === 'p1' ? raw.table_pieces['p1'].pieces : raw.table_pieces['p2'].pieces;
                         this.otherPiecePos = this.userInfo.camp === 'p1' ? raw.table_pieces['p2'].pieces : raw.table_pieces['p1'].pieces;
-                        console.log('raw', raw);
                         break;
                     case SYS_STATUS.SET_PIECE:
                         if (this.userId === raw.player_id) {
@@ -399,11 +417,59 @@
                         }
                         break;
                     case SYS_STATUS.MOVE:
-                        let animal = this.piecePos[raw.from];
-                        console.log('animal', animal);
-                        delete this.piecePos[raw.from];
-                        // this.piecePos[raw.to] = animal;
-                        this.$set(this.piecePos, raw.to, animal);
+                        switch (raw.fit_result) {
+                            case FIT_STATUS.BOTH_DIE:
+                                console.log('both die');
+                                // 当前玩家：是否是操作游戏的人，是的话，则移除当前的from,对方的to位置
+                                if (this.userId === raw.player_id) {
+                                    delete this.piecePos[raw.from];
+                                    delete this.otherPiecePos[raw.to];
+                                } else {
+                                    delete this.piecePos[raw.to];
+                                    delete this.otherPiecePos[raw.from];
+                                }
+                                break;
+                            case FIT_STATUS.P1_WIN:
+                            case FIT_STATUS.p2_WIN:
+                                let map = {
+                                    [FIT_STATUS.P1_WIN]: P1,
+                                    [FIT_STATUS.p2_WIN]: P2,
+                                };
+
+                                console.log('current camp', this.userInfo.camp, map[raw.fit_result]);
+                                if (this.userInfo.camp === map[raw.fit_result]) {
+                                    // 当前玩家胜利：移除对方棋子，
+                                    // 移动当前玩家的棋子(主动，发生了移动操作)，被动：则无需移动棋子
+                                    if (raw.play_id === this.userId) {
+                                        let animal = this.piecePos[raw.from];
+                                        delete this.piecePos[raw.from];
+                                        this.$set(this.piecePos, raw.to, animal);
+                                    }
+                                    delete this.otherPiecePos[raw.from];
+                                } else {
+                                    // 对方玩家获胜：移除当前玩家的棋子
+                                    delete this.piecePos[raw.from];
+                                    if (raw.player_id === this.userId) {
+
+                                    }
+                                }
+                                break;
+                            default:
+                                // 对方玩家
+                                if (this.userId !== raw.player_id) {
+                                    delete this.otherPiecePos[raw.from];
+                                    this.$set(this.otherPiecePos, raw.to, -1);
+                                    console.log('otherPiecePos', this.otherPiecePos)
+                                } else {
+                                    // 当前玩家
+                                    let animal = this.piecePos[raw.from];
+                                    console.log('animal', animal);
+                                    delete this.piecePos[raw.from];
+                                    this.$set(this.piecePos, raw.to, animal);
+                                }
+                                break;
+
+                        }
                         this.clickPos = null;
                         break;
                     //    报错
@@ -416,7 +482,6 @@
                     default:
                         break;
                 }
-
             })
         },
         watch: {
@@ -447,6 +512,8 @@
             (pos-7, '狮', green),
             (pos-8, '象', orange);
 
+    $p1-color: blue;
+    $p2-color: red;
     .chess-board {
         width: 60vh;
         margin: 5vh auto;
@@ -574,6 +641,19 @@
                 color: #fff;
             }
         }
+        @at-root {
+            .current-camp-p1 {
+                .#{$cls} {
+                    background-color: $p1-color !important;
+                }
+            }
+
+            .current-camp-p2 {
+                .#{$cls} {
+                    background-color: $p2-color !important;
+                }
+            }
+        }
     }
 
     @each $cls, $text, $bg in $pos-list {
@@ -587,7 +667,7 @@
 
     .p2 {
         .row {
-            @include circle(blue);
+            @include circle($p2-color);
 
             &:first-child {
                 .circle.is-top-left,
@@ -608,7 +688,7 @@
 
     .p1 {
         .row {
-            @include circle(red);
+            @include circle($p1-color);
 
             &:first-child {
                 .is-top-left,
@@ -627,10 +707,6 @@
         }
     }
 
-
-    .two:not(:first-child) {
-        @include circle(blue);
-    }
 
     @mixin lairCaveCircle($selector,$text) {
         .#{$selector} {
@@ -682,7 +758,19 @@
 
     .camp-item {
         position: absolute;
-        right: 10px;
+        right: 50px;
+        width: 50px;
+        height: 50px;
+        border: 2px solid #999;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        text-align: center;
+        justify-content: center;
+
+        &.is-shouldMove {
+            border-color: $is-canMove;
+        }
     }
 
     .camp-item--1 {

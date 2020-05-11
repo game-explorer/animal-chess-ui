@@ -4,7 +4,7 @@ export const GAME_STATUS = {
     READY: 2, // 准备摆放棋盘
     PLAYING: 3, // 开启下棋
     END: 4 // 结束游戏
-}
+};
 
 export const SYS_STATUS = {
     GAME_STATUS: 'game_status',
@@ -16,4 +16,13 @@ export const SYS_STATUS = {
     TIME_TO: 'time_to',
     MOVE: 'move',
     SET_PIECE: 'set_piece'
-}
+};
+
+export const FIT_STATUS = {
+    BOTH_DIE: 'bothdie',
+    P1_WIN: 'p1win',
+    p2_WIN: 'p2win'
+};
+
+export const P1 = 'p1';
+export const P2 = 'p2';
