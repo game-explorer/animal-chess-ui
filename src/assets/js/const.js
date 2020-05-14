@@ -15,7 +15,9 @@ export const SYS_STATUS = {
     START: 'start',
     TIME_TO: 'time_to',
     MOVE: 'move',
-    SET_PIECE: 'set_piece'
+    SET_PIECE: 'set_piece',
+    END: 'end',
+    LEAVE_ROOM: "leave_room"
 };
 
 export const FIT_STATUS = {

@@ -92,6 +92,13 @@
                 </li>
             </ul>
         </van-popup>
+
+        <van-dialog v-model="isGameEnd"
+                    @confirm="leaveRoom"
+                    confirmButtonText="离开房间"
+                    title="游戏结束">
+            <h3 v-if="winCamp">{{winCamp}}获胜</h3>
+        </van-dialog>
     </div>
 </template>
 <script>
@@ -134,7 +141,9 @@
                 // 另一方的棋子摆放位置
                 otherPiecePos: {},
                 // canMovePos: []
-                isShouldMovePlayer: 0
+                isShouldMovePlayer: 0,
+                isGameEnd: false,
+                winCamp: ''
 
             }
         },
@@ -199,7 +208,7 @@
                 }
                 console.log('moveArr', moveArr);
                 moveArr = moveArr.filter((item) => {
-                    return !this.piecePos[item]
+                    return !this.piecePos[item] && !this.cavePos.includes(item);
                 });
                 return moveArr;
             },
@@ -249,6 +258,9 @@
             // 离开房间
             leaveRoom() {
                 this.isShow = true;
+                this.$ws.send(JSON.stringify({
+                    type: SYS_STATUS.LEAVE_ROOM
+                }))
             },
             // 点击原点、或者棋子
             clickCircleHandle(y, x, e) {
@@ -349,6 +361,9 @@
                                 this.isRoom = true;
                                 this.roomId = raw.room_id;
                                 break;
+                            case GAME_STATUS.END:
+                                this.isGameEnd = true;
+                                break;
                             default:
                                 break
                         }
@@ -440,17 +455,25 @@
                                 if (this.userInfo.camp === map[raw.fit_result]) {
                                     // 当前玩家胜利：移除对方棋子，
                                     // 移动当前玩家的棋子(主动，发生了移动操作)，被动：则无需移动棋子
-                                    if (raw.play_id === this.userId) {
+                                    console.log('raw.play_id === this.userId', raw.player_id === this.userId);
+                                    if (raw.player_id === this.userId) {
                                         let animal = this.piecePos[raw.from];
+                                        console.log('animal', animal);
                                         delete this.piecePos[raw.from];
                                         this.$set(this.piecePos, raw.to, animal);
-                                    }
-                                    delete this.otherPiecePos[raw.from];
-                                } else {
-                                    // 对方玩家获胜：移除当前玩家的棋子
-                                    delete this.piecePos[raw.from];
-                                    if (raw.player_id === this.userId) {
 
+                                        delete this.otherPiecePos[raw.to];
+                                    } else {
+                                        delete this.otherPiecePos[raw.from];
+                                    }
+                                } else {
+                                    if (raw.player_id === this.userId) {
+                                        // 对方玩家获胜：移除当前玩家的棋子
+                                        delete this.piecePos[raw.from];
+                                    } else {
+                                        delete this.otherPiecePos[raw.from];
+                                        this.$set(this.otherPiecePos, raw.to, -1);
+                                        delete this.piecePos[raw.to];
                                     }
                                 }
                                 break;
@@ -471,6 +494,18 @@
 
                         }
                         this.clickPos = null;
+                        break;
+                    case SYS_STATUS.END:
+                        if (this.userId === raw.win_player_id) {
+                            this.winCamp = this.userInfo.camp;
+                        } else {
+                            this.winCamp = this.otherCamp;
+                        }
+                        this.isGameEnd = true;
+                        break;
+                    case SYS_STATUS.LEAVE_ROOM:
+                        this.isShow = false;
+                        this.isRoom = true;
                         break;
                     //    报错
                     case SYS_STATUS.ERROR:
@@ -630,7 +665,7 @@
     @mixin animal-piece($cls,$text,$bg) {
         .#{$cls} {
             &::after {
-                content: $text;
+                content: $text !important;
                 line-height: 40px;
                 width: 100%;
                 height: 100%;
