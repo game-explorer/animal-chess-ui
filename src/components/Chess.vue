@@ -1,8 +1,23 @@
 <template>
     <div>
         <div class="cur-user">
-            当前为：{{userInfo.camp}}
+            <van-row>
+                <van-col span="16">
+                    {{userId}} 当前为：{{userInfo.camp}}
+                    <p>房间号：{{userInfo.room_id}}</p>
+                </van-col>
+                <van-col span="8">
+                    <van-button @click="showDieDlgHandle">死亡棋子</van-button>
+                </van-col>
+            </van-row>
         </div>
+        <van-popup v-model="showDieDlg" position="top" :style="{ height: '30%' }">
+            <div v-if="!diePieces.length">暂无</div>
+            <ul>
+                <li v-for="(item,index) in diePieces" :key="index">{{animalMap[item]}}</li>
+            </ul>
+        </van-popup>
+
         <div class="chess-board" :class="['current-camp-'+this.userInfo.camp]">
             <div class="part"
                  v-for="item in chessBoard"
@@ -142,9 +157,13 @@
                 otherPiecePos: {},
                 // canMovePos: []
                 isShouldMovePlayer: 0,
-                isGameEnd: false,
-                winCamp: ''
 
+                isGameEnd: false,
+                winCamp: '',
+                showDieDlg: false,
+                diePieces: [],
+                from: '',
+                to: ''
             }
         },
         computed: {
@@ -208,17 +227,21 @@
                 }
                 console.log('moveArr', moveArr);
                 moveArr = moveArr.filter((item) => {
-                    return !this.piecePos[item] && !this.cavePos.includes(item);
+                    return !this.piecePos[item] && !(this.cavePos.includes(item) && (this.piecePos[item] || this.otherPiecePos[item]));
                 });
                 return moveArr;
             },
             isShouldMoveCamp() {
                 let currentCamp = this.userInfo.camp;
-                let otherCamp = currentCamp === 'p1' ? 'p2' : 'p1';
-                if (this.isShouldMovePlayer === this.userInfo.player_id) {
-                    return currentCamp;
+                let otherCamp = this.otherCamp;
+                if (this.gameStatus === GAME_STATUS.PLAYING) {
+                    if (this.isShouldMovePlayer === this.userInfo.player_id) {
+                        return currentCamp;
+                    }
+                    return otherCamp
+                } else {
+                    return currentCamp
                 }
-                return otherCamp
             },
             otherCamp() {
                 let currentCamp = this.userInfo.camp;
@@ -265,6 +288,10 @@
             // 点击原点、或者棋子
             clickCircleHandle(y, x, e) {
                 let pointer = `${x}-${y}`;
+                if (this.clickPos && this.clickPos.x === x && this.clickPos.y === y) {
+                    this.clickPos = null;
+                    return;
+                }
                 console.log('pointer', pointer);
                 switch (this.gameStatus) {
                     case GAME_STATUS.READY:
@@ -273,10 +300,12 @@
                             return
                         }
                         // 特殊的位置不能摆棋子
-                        if (this.lairPos.includes(pointer) || this.cavePos.includes(pointer)) {
+                        if (this.lairPos.includes(pointer) ||
+                            this.cavePos.includes(pointer)
+                            || y === 0 || y === 12) {
                             this.$notify({
                                 type: 'warning',
-                                message: '兽穴或则山洞不能放旗子！'
+                                message: '兽穴或则山洞、第一排、最后一排不能放旗子！'
                             });
                             return;
                         }
@@ -300,6 +329,10 @@
                                 x: x,
                                 y: y
                             };
+                            this.otherCurClick = {
+                                x: x,
+                                y: y
+                            }
                         } else {
                             if (!this.isCanMove(pointer)) {
                                 this.clickPos = null;
@@ -322,6 +355,10 @@
                         console.error('click circle other status', this.gameStatus);
                         break;
                 }
+            },
+
+            showDieDlgHandle() {
+                this.showDieDlg = true;
             },
 
             // 选择一个棋子
@@ -403,6 +440,7 @@
                         break;
                     case SYS_STATUS.TIME_TO:
                         this.isShouldMovePlayer = raw.player_id;
+                        this.gameStatus = GAME_STATUS.PLAYING;
                         break;
                     //    创建房间
                     case SYS_STATUS.CREATE_ROOM:
@@ -413,16 +451,20 @@
                         this.raw = raw;
                         if (!raw.table_pieces['p1']) {
                             raw.table_pieces['p1'] = {
-                                pieces: {}
+                                pieces: {},
+                                die: []
                             }
                         }
                         if (!raw.table_pieces['p2']) {
                             raw.table_pieces['p2'] = {
-                                pieces: {}
+                                pieces: {},
+                                die: []
                             }
                         }
-                        this.piecePos = this.userInfo.camp === 'p1' ? raw.table_pieces['p1'].pieces : raw.table_pieces['p2'].pieces;
+                        this.piecePos = raw.table_pieces[this.userInfo.camp].pieces;
                         this.otherPiecePos = this.userInfo.camp === 'p1' ? raw.table_pieces['p2'].pieces : raw.table_pieces['p1'].pieces;
+                        // 已经死亡的棋子
+                        this.diePieces = raw.table_pieces[this.userInfo.camp].die || [];
                         break;
                     case SYS_STATUS.SET_PIECE:
                         if (this.userId === raw.player_id) {
@@ -480,8 +522,13 @@
                             default:
                                 // 对方玩家
                                 if (this.userId !== raw.player_id) {
-                                    delete this.otherPiecePos[raw.from];
-                                    this.$set(this.otherPiecePos, raw.to, -1);
+                                    // 走棋提示
+                                    this.from = raw.from;
+                                    this.to = raw.to;
+                                    setTimeout(() => {
+                                        delete this.otherPiecePos[raw.from];
+                                        this.$set(this.otherPiecePos, raw.to, -1);
+                                    }, 1000);
                                     console.log('otherPiecePos', this.otherPiecePos)
                                 } else {
                                     // 当前玩家
@@ -557,6 +604,11 @@
         flex-direction: column;
         min-height: 360px;
         min-width: 240px;
+
+        @media (max-width: 640px) {
+            height: 480px;
+            width: 320px;
+        }
     }
 
     .part {
@@ -614,8 +666,8 @@
             z-index: 10;
             content: "";
             position: absolute;
-            width: 30px;
-            height: 30px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             background-color: $color;
             box-shadow: 0 3px 3px rgba(0, 0, 0, 0.29);
@@ -664,9 +716,12 @@
 
     @mixin animal-piece($cls,$text,$bg) {
         .#{$cls} {
+            width: 30px !important;
+            height: 30px !important;
+
             &::after {
                 content: $text !important;
-                line-height: 40px;
+                line-height: 30px;
                 width: 100%;
                 height: 100%;
                 position: absolute;
@@ -789,6 +844,10 @@
         width: 100%;
         height: 100%;
         top: 0;
+        pointer-events: none;
+        @media (max-width: 640px) {
+            display: none;
+        }
     }
 
     .camp-item {

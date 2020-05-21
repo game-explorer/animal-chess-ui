@@ -8,14 +8,6 @@
                     class="m-l-md"
                     @click="showRoomInput" type="primary">加入房间
             </van-button>
-            <div class="van-hairline--top m-t-md" v-if="isShowInput">
-                <!-- 输入任意文本 -->
-                <van-field v-model.number="roomId" label="房间号"/>
-                <van-button
-                        class="m-l-md"
-                        @click="enterRoom" type="primary">确认
-                </van-button>
-            </div>
 
             <van-dialog v-model="show" title="进入房间?"
                         confirmButtonText="进入房间"
@@ -23,6 +15,18 @@
                         @confirm="enterRoom"
                         @cancel="leaveRoom"
                         show-cancel-button>
+            </van-dialog>
+            <van-dialog v-model="isShowEnterRoom"
+                        show-cancel-button
+                        @confirm="enterRoom"
+                        title="加入房间">
+                <van-field
+                        style="margin-top:20px;"
+                        v-model="roomId"
+                        name="房间号"
+                        label="房间号"
+                        placeholder="请输入房间号"
+                />
             </van-dialog>
         </div>
     </div>
@@ -37,7 +41,8 @@
             return {
                 roomId: 0,
                 isShowInput: false,
-                show: false
+                show: false,
+                isShowEnterRoom: false
             }
         },
         props: {
@@ -56,11 +61,12 @@
             },
             // 显示输入房间号的input框
             showRoomInput() {
-                this.isShowInput = true;
+                // this.isShowInput = true;
+                this.isShowEnterRoom = true;
             },
             // 进入房间
             enterRoom() {
-                this.$emit('enterRoom', this.roomId);
+                this.$emit('enterRoom', Number(this.roomId));
             },
             // 离开房间
             leaveRoom() {
