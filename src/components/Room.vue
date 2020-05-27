@@ -89,7 +89,7 @@
         left: 0;
         top: 0;
         background-color: #f7f8fa;
-        z-index: 9999;
+        z-index: 10;
     }
 
 </style>

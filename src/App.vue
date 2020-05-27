@@ -10,6 +10,7 @@
     import Chess from "./components/Chess";
     import {getUserId as getUserIdApi} from './api/index.js'
     import {mapMutations} from 'vuex'
+    import {getAllQuery} from "./assets/js/tool";
 
     export default {
         name: 'App',
@@ -29,6 +30,14 @@
             }),
             async getUserIdHandle() {
                 try {
+                    // 测试代码
+                    const query = getAllQuery();
+                    if (query.user_id) {
+                        this.isReady = true;
+                        Vue.prototype.$ws = new WebSocket(parseInt(query.user_id));
+                        return;
+                    }
+                    console.log('this.$route.query.user_id', this.$route);
                     const res = await getUserIdApi();
                     console.log('res', res);
                     this.userId = res.data.id;
