@@ -3,7 +3,7 @@
         <div class="cur-user">
             <van-row>
                 <van-col span="16">
-                    {{userId}} 当前为：{{userInfo.camp}}
+                    当前为：{{userInfo.camp}}
                     <p>房间号：{{userInfo.room_id}}</p>
                 </van-col>
                 <van-col span="8">
@@ -13,8 +13,11 @@
         </div>
         <van-popup v-model="showDieDlg" position="top" :style="{ height: '30%' }">
             <div v-if="!diePieces.length">暂无</div>
-            <ul>
-                <li v-for="(item,index) in diePieces" :key="index">{{animalMap[item]}}</li>
+            <ul class="piece-list">
+                <li
+                        class="piece-item"
+                        v-for="(item,index) in diePieces" :key="index">{{animalMap[item]}}
+                </li>
             </ul>
         </van-popup>
 
@@ -36,7 +39,8 @@
                                  :class="[lairCaveCls(x,y+2),
                                  'pos-'+piecePos[x+'-'+(y+2)],
                                  {   'is-canMove':isCanMove(x+'-'+(y+2)),
-                                     'is-selected':toPointString(clickPos)===x+'-'+(y+2),
+                                     'is-selected':toPointString(clickPos)===x+'-'+(y+2)
+                                     ||from===join(x,y+2)||to===join(x,y+2),
                                      'other-piece':otherPiecePos[x+'-'+(y+2)]
                                  }
                                  ]"
@@ -45,7 +49,8 @@
                                  :class="['pos-'+piecePos[(x+1)+'-'+(y+1)],
                                    {
                                       'is-canMove':isCanMove((x+1)+'-'+(y+1)),
-                                     'is-selected':toPointString(clickPos)===(x+1)+'-'+(y+1),
+                                     'is-selected':toPointString(clickPos)===(x+1)+'-'+(y+1)
+                                     ||from===join(x+1,y+1)||to===join(x+1,y+1),
                                       'other-piece':otherPiecePos[(x+1)+'-'+(y+1)]
                                  }
                                  ]"
@@ -55,7 +60,8 @@
                                  :class="[lairCaveCls(x,y),'pos-'+piecePos[x+'-'+y],
                                  {
                                      'is-canMove':isCanMove(x+'-'+y),
-                                     'is-selected':toPointString(clickPos)===x+'-'+y,
+                                     'is-selected':toPointString(clickPos)===x+'-'+y
+                                     ||from===join(x,y)||to===join(x,y),
                                      'other-piece':otherPiecePos[x+'-'+y]
                                  }]"
                                  @click="clickCircleHandle(y,x,$event)"
@@ -65,7 +71,8 @@
                                  :class="['pos-'+piecePos[(x+2)+'-'+(y+2)],
                                  {
                                      'is-canMove':isCanMove((x+2)+'-'+(y+2)),
-                                     'is-selected':toPointString(clickPos)===(x+2)+'-'+(y+2),
+                                     'is-selected':toPointString(clickPos)===(x+2)+'-'+(y+2)
+                                     ||from===join(x+2,y+2)||to===join(x+2,y+2),
                                      'other-piece':otherPiecePos[(x+2)+'-'+(y+2)]
                                  }]"
                                  @click="clickCircleHandle(y+2,x+2,$event)"></div>
@@ -73,7 +80,8 @@
                                  :class="['pos-'+piecePos[(x+2)+'-'+y],
                                  {
                                      'is-canMove':isCanMove((x+2)+'-'+y),
-                                     'is-selected':toPointString(clickPos)===(x+2)+'-'+y,
+                                     'is-selected':toPointString(clickPos)===(x+2)+'-'+y
+                                     ||from===join(x+2,y)||to===join(x,y),
                                      'other-piece':otherPiecePos[(x+2)+'-'+y]
                                  }]"
                                  @click="clickCircleHandle(y,x+2,$event)"></div>
@@ -95,18 +103,18 @@
               v-if="isRoom"
               @leaveRoom="leaveRoom"
               @enterRoom="enterRoom"></Room>
-        <van-popup v-model="isShowPiece"
-                   position="bottom"
-                   :style="{ height: '30%' }">
-            <ul class="piece-list">
-                <li
-                        @click="selectPieceHandle(index)"
-                        class="piece-item"
-                        v-for="(item,index) in pieces" :key="index">
-                    {{animalMap[item]}}{{item}}
-                </li>
-            </ul>
-        </van-popup>
+        <!--        <van-popup v-model="isShowPiece"-->
+        <!--                   position="bottom"-->
+        <!--                   :style="{ height: '30%' }">-->
+        <!--            <ul class="piece-list">-->
+        <!--                <li-->
+        <!--                        @click="selectPieceHandle(index)"-->
+        <!--                        class="piece-item"-->
+        <!--                        v-for="(item,index) in pieces" :key="index">-->
+        <!--                    {{animalMap[item]}}{{item}}-->
+        <!--                </li>-->
+        <!--            </ul>-->
+        <!--        </van-popup>-->
 
         <van-dialog v-model="isGameEnd"
                     @confirm="leaveRoom"
@@ -114,12 +122,21 @@
                     title="游戏结束">
             <h3 v-if="winCamp">{{winCamp}}获胜</h3>
         </van-dialog>
+        <piece-list
+                v-show="isShowPiece"
+                :style="{
+            left:pieceListPos.x+'px',
+            top:pieceListPos.y+'px'
+                }"
+        ></piece-list>
     </div>
 </template>
 <script>
     import {GAME_STATUS, SYS_STATUS, FIT_STATUS, P1, P2} from "../assets/js/const";
     import Room from '../components/Room'
     import {getAllQuery} from '../assets/js/tool'
+    import PieceList from '../components/Piece.vue'
+    import {mapState} from 'vuex'
 
     export default {
         name: "chess",
@@ -146,7 +163,7 @@
                     camp: P1
                 },
                 pieces: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8],
-                userId: 0,
+                // userId: 0,
                 piecePos: {},
                 animalMap: ['', '鼠', '猫', '狗', '狼', '豹', '虎', '狮', '象'],
                 lairPos: ['4-0', '4-12'],
@@ -163,10 +180,18 @@
                 showDieDlg: false,
                 diePieces: [],
                 from: '',
-                to: ''
+                to: '',
+                timeout: 2000,
+                pieceListPos: {
+                    x: 0,
+                    y: 0
+                }
             }
         },
         computed: {
+            ...mapState({
+                userId: state => state.userId
+            }),
             canMovePos() {
                 if (!this.clickPos) return [];
                 let {x, y} = this.clickPos;
@@ -248,7 +273,7 @@
                 return currentCamp === P1 ? P2 : P1
             }
         },
-        components: {Room},
+        components: {Room, PieceList},
         methods: {
             isCanMove(point) {
                 return this.canMovePos.find(item => {
@@ -287,6 +312,7 @@
             },
             // 点击原点、或者棋子
             clickCircleHandle(y, x, e) {
+                console.log('e', e);
                 let pointer = `${x}-${y}`;
                 if (this.clickPos && this.clickPos.x === x && this.clickPos.y === y) {
                     this.clickPos = null;
@@ -318,6 +344,10 @@
                             return;
                         }
                         this.curPos = pointer;
+                        this.pieceListPos = {
+                            x: e.clientX,
+                            y: e.clientY
+                        };
                         this.isShowPiece = true;
                         break;
                     case GAME_STATUS.PLAYING:
@@ -359,6 +389,7 @@
 
             showDieDlgHandle() {
                 this.showDieDlg = true;
+                this.getRoom();
             },
 
             // 选择一个棋子
@@ -377,10 +408,13 @@
                 } else {
                     return point.x + '-' + point.y;
                 }
+            },
+            join(x, y) {
+                return x + '-' + y
             }
         },
         mounted() {
-            this.userId = parseInt(getAllQuery().user_id);
+            // this.userId = parseInt(this.$route.query.user_id);
             this.$ws.addEventListener('message', (event) => {
                 let {type, raw} = JSON.parse(event.data);
                 switch (type) {
@@ -474,6 +508,13 @@
                         }
                         break;
                     case SYS_STATUS.MOVE:
+                        // 走棋提示
+                        this.from = raw.from;
+                        this.to = raw.to;
+                        setTimeout(() => {
+                            this.from = '';
+                            this.to = '';
+                        }, this.timeout);
                         switch (raw.fit_result) {
                             case FIT_STATUS.BOTH_DIE:
                                 console.log('both die');
@@ -484,7 +525,10 @@
                                 } else {
                                     delete this.piecePos[raw.to];
                                     delete this.otherPiecePos[raw.from];
+                                    this.from = '';
+                                    this.to = '';
                                 }
+                                this.$notify({type: 'danger', message: 'both die'});
                                 break;
                             case FIT_STATUS.P1_WIN:
                             case FIT_STATUS.p2_WIN:
@@ -518,17 +562,13 @@
                                         delete this.piecePos[raw.to];
                                     }
                                 }
+                                this.$notify({type: 'primary', message: map[raw.fit_result] + 'win!'});
                                 break;
                             default:
                                 // 对方玩家
                                 if (this.userId !== raw.player_id) {
-                                    // 走棋提示
-                                    this.from = raw.from;
-                                    this.to = raw.to;
-                                    setTimeout(() => {
-                                        delete this.otherPiecePos[raw.from];
-                                        this.$set(this.otherPiecePos, raw.to, -1);
-                                    }, 1000);
+                                    delete this.otherPiecePos[raw.from];
+                                    this.$set(this.otherPiecePos, raw.to, -1);
                                     console.log('otherPiecePos', this.otherPiecePos)
                                 } else {
                                     // 当前玩家
@@ -565,6 +605,9 @@
                         break;
                 }
             })
+            document.addEventListener('click', () => {
+                this.isShowPiece = false;
+            }, true)
         },
         watch: {
             pieces(n) {

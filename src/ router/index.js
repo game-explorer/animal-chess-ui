@@ -1,6 +1,5 @@
 import VueRouter from 'vue-router'
 
-const Room = () => import('../components/Room');
 const Chess = () => import('../components/Chess');
 
 const router = new VueRouter({
@@ -8,17 +7,7 @@ const router = new VueRouter({
     routes: [
         {
             path: '/',
-            component: Room,
-        },
-        {
-            path: '/room',
-            component: Room,
-            name: 'room'
-        },
-        {
-            path: "/game",
             component: Chess,
-            name: 'game'
         }
     ]
 });

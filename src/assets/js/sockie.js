@@ -41,12 +41,12 @@ export default class WebSocketJS {
         });
         this.ws.addEventListener('close', () => {
             console.log("Connection closed.");
-            this.ws = new WebSocketJS(uid);
+            // this.ws = new WebSocketJS(uid);
         });
         this.ws.addEventListener("error", (e) => {
             console.error('error', e);
         });
-        this.onLineCheck();
+        // this.onLineCheck();
         return this.ws
     }
 
