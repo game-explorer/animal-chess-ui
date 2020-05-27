@@ -7,7 +7,7 @@ import vueRouter from 'vue-router'
 import router from './ router/index.js'
 import {getAllQuery} from './assets/js/tool'
 import './assets/css/common.scss'
-import {Button, Field, Dialog, Notify, Popup, NoticeBar, Col, Row} from 'vant';
+import {Button, Field, Dialog, Notify, Popup, NoticeBar, Col, Row, Circle} from 'vant';
 
 Vue.use(Button);
 Vue.use(Field);
@@ -17,6 +17,7 @@ Vue.use(Popup);
 Vue.use(NoticeBar);
 Vue.use(Col);
 Vue.use(Row);
+Vue.use(Circle);
 Vue.use(vueRouter);
 // Vue.use(Vuex);
 

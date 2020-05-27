@@ -1,16 +1,25 @@
 <template>
     <div>
-        <div class="cur-user">
-            <van-row>
-                <van-col span="16">
-                    当前为：{{userInfo.camp}}
-                    <p>房间号：{{userInfo.room_id}}</p>
-                </van-col>
-                <van-col span="8">
-                    <van-button @click="showDieDlgHandle">死亡棋子</van-button>
-                </van-col>
-            </van-row>
-        </div>
+        <van-row class="app-header">
+            <van-col span="16">
+                <div class="is-flex">
+                    <van-circle
+                            size="60px"
+                            :color="isShouldMoveCamp===userInfo.camp?activeColor:'#999'"
+                            v-model="currentRate"
+                            :rate="100"
+                            :speed="100"
+                            :text="userInfo.camp"/>
+                    <p class="header__room">房间号：{{userInfo.room_id}}</p>
+                </div>
+            </van-col>
+            <van-col span="8">
+                <van-button
+                        v-if="diePieces.length"
+                        @click="showDieDlgHandle">死亡棋子
+                </van-button>
+            </van-col>
+        </van-row>
         <van-popup v-model="showDieDlg" position="top" :style="{ height: '30%' }">
             <div v-if="!diePieces.length">暂无</div>
             <ul class="piece-list">
@@ -90,15 +99,6 @@
                 </div>
             </div>
         </div>
-        <div class="camp-list">
-            <div class="camp-item camp-item--1"
-                 :class="{'is-shouldMove':isShouldMoveCamp==='p2'}"
-            >p2
-            </div>
-            <div class="camp-item camp-item--2"
-                 :class="{'is-shouldMove':isShouldMoveCamp==='p1'}">p1
-            </div>
-        </div>
         <Room :isShow="isShow"
               v-if="isRoom"
               @leaveRoom="leaveRoom"
@@ -124,10 +124,12 @@
         </van-dialog>
         <piece-list
                 v-show="isShowPiece"
+                :pieces="pieces"
                 :style="{
             left:pieceListPos.x+'px',
             top:pieceListPos.y+'px'
                 }"
+                @select="putPieceHandle"
         ></piece-list>
     </div>
 </template>
@@ -185,7 +187,9 @@
                 pieceListPos: {
                     x: 0,
                     y: 0
-                }
+                },
+                currentRate: 100,
+                activeColor: '#7aff6d'
             }
         },
         computed: {
@@ -193,6 +197,7 @@
                 userId: state => state.userId
             }),
             canMovePos() {
+                if (this.gameStatus !== GAME_STATUS.PLAYING) return []
                 if (!this.clickPos) return [];
                 let {x, y} = this.clickPos;
                 let pointer = this.clickPos.x + '-' + this.clickPos.y;
@@ -344,9 +349,13 @@
                             return;
                         }
                         this.curPos = pointer;
+                        this.clickPos = {
+                            x: x,
+                            y: y
+                        };
                         this.pieceListPos = {
                             x: e.clientX,
-                            y: e.clientY
+                            y: e.clientY + document.documentElement.scrollTop
                         };
                         this.isShowPiece = true;
                         break;
@@ -354,15 +363,19 @@
                         let hasPiece = this.piecePos[pointer];
                         console.log('hasPiece', hasPiece);
                         if (hasPiece) {
-                            //    1.当前棋子添加提起来的效果
-                            this.clickPos = {
-                                x: x,
-                                y: y
-                            };
-                            this.otherCurClick = {
-                                x: x,
-                                y: y
+                            if (this.isShouldMovePlayer === this.userId) {
+                                //    1.当前棋子添加提起来的效果
+                                this.clickPos = {
+                                    x: x,
+                                    y: y
+                                };
+                            } else {
+                                this.$notify({
+                                    type: 'warning',
+                                    message: '当前不该你走棋子！'
+                                })
                             }
+
                         } else {
                             if (!this.isCanMove(pointer)) {
                                 this.clickPos = null;
@@ -392,6 +405,17 @@
                 this.getRoom();
             },
 
+            // 摆放棋子
+            putPieceHandle(piece) {
+                console.log('putPieceHandle', piece);
+                this.piecePos[this.curPos] = piece;
+                let index = this.pieces.findIndex(item => {
+                    return item === piece
+                });
+                if (index !== -1) {
+                    this.pieces.splice(index, 1);
+                }
+            },
             // 选择一个棋子
             selectPieceHandle(index) {
                 this.piecePos[this.curPos] = this.pieces[index];
@@ -606,8 +630,28 @@
                 }
             })
             document.addEventListener('click', () => {
-                this.isShowPiece = false;
-            }, true)
+                if (this.gameStatus === GAME_STATUS.READY) {
+                    this.isShowPiece = false;
+                    this.clickPos = null;
+                }
+            }, true);
+
+            let timeId = 0;
+            window.addEventListener('resize', (e) => {
+                if (this.isShowPiece) {
+                    clearTimeout(timeId);
+                    timeId = setTimeout(() => {
+                        let targetDom = document.querySelector('.is-selected');
+                        if (targetDom) {
+                            let rect = targetDom.getBoundingClientRect();
+                            this.pieceListPos = {
+                                x: rect.x + 8,
+                                y: rect.y + 8 + document.documentElement.scrollTop
+                            }
+                        }
+                    }, 500);
+                }
+            })
         },
         watch: {
             pieces(n) {
@@ -882,43 +926,20 @@
         }
     }
 
-    .camp-list {
-        position: fixed;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        pointer-events: none;
-        @media (max-width: 640px) {
-            display: none;
-        }
-    }
-
-    .camp-item {
-        position: absolute;
-        right: 50px;
-        width: 50px;
-        height: 50px;
-        border: 2px solid #999;
-        border-radius: 50%;
+    .app-header {
+        padding: 5px 0;
         display: flex;
         align-items: center;
-        text-align: center;
+    }
+
+    .is-flex {
+        display: flex;
         justify-content: center;
-
-        &.is-shouldMove {
-            border-color: $is-canMove;
-        }
+        align-items: center;
     }
 
-    .camp-item--1 {
-        position: absolute;
-        top: 20%;
+    .header__room {
+        margin-left: 10px;
     }
-
-    .camp-item--2 {
-        position: absolute;
-        bottom: 20%;
-    }
-
 
 </style>

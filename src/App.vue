@@ -1,6 +1,5 @@
 <template>
     <div id="app">
-        userId:{{userId}}
         <Chess v-if="isReady"></Chess>
     </div>
 </template>

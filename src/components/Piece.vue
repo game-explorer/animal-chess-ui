@@ -1,32 +1,18 @@
 <template>
     <div class="nav">
         <ul class="nav-list">
-            <li class="nav-item">
-                <span>鼠
-                    <p>x2</p>
-                </span>
-            </li>
-            <li class="nav-item">
-                <span>猫</span>
-            </li>
-            <li class="nav-item">
-                <span>狗</span>
-            </li>
-            <li class="nav-item">
-                <span>狼</span>
-            </li>
-            <li class="nav-item">
-                <span>豹</span>
-            </li>
-            <li class="nav-item">
-                <span>虎</span>
-            </li>
-            <li class="nav-item">
-                <span>狮</span>
-            </li>
-            <li class="nav-item">
-                <span>象</span>
-            </li>
+            <template
+                    v-for="i in 8">
+                <li class="nav-item"
+                    :key="i"
+                    v-if="getNum(i)">
+                    <div class="nav-item__wrapper" @click="selectPieceHandle(i)">
+                        <p>{{animalMap[i]}}</p>
+                        <p>x{{getNum(i)}}</p>
+                    </div>
+
+                </li>
+            </template>
         </ul>
     </div>
 
@@ -35,8 +21,27 @@
 <script>
     export default {
         name: 'piece-list',
+        props: {
+            pieces: {
+                type: Array,
+                default: () => []
+            }
+        },
         data() {
-            return {}
+            return {
+                animalMap: ['', '鼠', '猫', '狗', '狼', '豹', '虎', '狮', '象'],
+            }
+        },
+        methods: {
+            getNum(i) {
+                let findA = this.pieces.filter((item) => {
+                    return item === i
+                })
+                return findA.length
+            },
+            selectPieceHandle(i) {
+                this.$emit('select', i)
+            }
         }
     }
 </script>
@@ -66,30 +71,31 @@
         left: 0;
         top: 0;
         transform-origin: 100% 100%;
-        /*overflow: hidden;*/
+
+        .nav-item__wrapper {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transform: skew(-45deg) rotate(-67deg) scale(1);
+            transition: all 0.3s;
+            background: orange;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: #ebedf0 0 4px 12px;
+            color: #fff;
+            font-size: 12px;
+        }
     }
 
-    .nav-item span {
-        position: absolute;
-        right: 10px;
-        bottom: 10px;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        transform: skew(-45deg) rotate(-67deg) scale(1);
-        transition: opacity 0.3s, color 0.3s;
-        background: #477eff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: #ebedf0 0 4px 12px;
-        color: #fff;
-        font-size: 12px;
-    }
-
-    .nav-item span:hover {
+    .nav-item .nav-item__wrapper:hover {
         background: #ff6f00;
+        transform: skew(-45deg) rotate(-67deg) scale(1.2);
     }
 
     .nav-item:first-child {
