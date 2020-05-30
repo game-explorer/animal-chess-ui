@@ -46,6 +46,7 @@
     }
 </script>
 <style scoped lang="scss">
+    $piece-color: #60373E;
     ul, li {
         padding: 0;
         margin: 0;
@@ -81,7 +82,7 @@
             border-radius: 50%;
             transform: skew(-45deg) rotate(-67deg) scale(1);
             transition: all 0.3s;
-            background: orange;
+            background: $piece-color;
             display: flex;
             align-items: center;
             flex-direction: column;

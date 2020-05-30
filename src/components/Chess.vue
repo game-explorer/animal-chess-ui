@@ -39,10 +39,11 @@
                  'ready-status':gameStatus===GAME_STATUS.READY}]">
                 <div class="row" v-for="y in item.y" :key="y">
                     <div class="cell" v-for="x in [0,2,4,6]" :key="x">
-                        <span class="text">{{x}}-{{y}}</span>
+                        <!--                        <span class="text">{{x}}-{{y}}</span>-->
                         <div class="divide a"></div>
                         <div class="divide b"></div>
                         <template>
+                            <!--  top-left-->
                             <div class="circle is-top-left"
                                  :pos="x+'-'+(y+2)"
                                  :class="[lairCaveCls(x,y+2),
@@ -54,6 +55,7 @@
                                  }
                                  ]"
                                  @click="clickCircleHandle(y+2,x,$event)"></div>
+                            <!--  center-->
                             <div class="circle is-center"
                                  :class="['pos-'+piecePos[(x+1)+'-'+(y+1)],
                                    {
@@ -65,6 +67,7 @@
                                  ]"
                                  :pos="(x+1)+'-'+(y+1)"
                                  @click="clickCircleHandle(y+1,x+1,$event)"></div>
+                            <!--   bottom-left-->
                             <div class="circle is-bottom-left"
                                  :class="[lairCaveCls(x,y),'pos-'+piecePos[x+'-'+y],
                                  {
@@ -75,6 +78,7 @@
                                  }]"
                                  @click="clickCircleHandle(y,x,$event)"
                             ></div>
+                            <!-- top-right-->
                             <div class="circle is-top-right"
                                  :pos="(x+2)+'-'+(y+2)"
                                  :class="['pos-'+piecePos[(x+2)+'-'+(y+2)],
@@ -85,12 +89,14 @@
                                      'other-piece':otherPiecePos[(x+2)+'-'+(y+2)]
                                  }]"
                                  @click="clickCircleHandle(y+2,x+2,$event)"></div>
+                            <!--  bottom-right-->
                             <div class="circle is-bottom-right"
+                                 :pos="(x+2)+'-'+y"
                                  :class="['pos-'+piecePos[(x+2)+'-'+y],
                                  {
                                      'is-canMove':isCanMove((x+2)+'-'+y),
                                      'is-selected':toPointString(clickPos)===(x+2)+'-'+y
-                                     ||from===join(x+2,y)||to===join(x,y),
+                                     ||from===join(x+2,y)||to===join(x+2,y),
                                      'other-piece':otherPiecePos[(x+2)+'-'+y]
                                  }]"
                                  @click="clickCircleHandle(y,x+2,$event)"></div>
@@ -103,19 +109,6 @@
               v-if="isRoom"
               @leaveRoom="leaveRoom"
               @enterRoom="enterRoom"></Room>
-        <!--        <van-popup v-model="isShowPiece"-->
-        <!--                   position="bottom"-->
-        <!--                   :style="{ height: '30%' }">-->
-        <!--            <ul class="piece-list">-->
-        <!--                <li-->
-        <!--                        @click="selectPieceHandle(index)"-->
-        <!--                        class="piece-item"-->
-        <!--                        v-for="(item,index) in pieces" :key="index">-->
-        <!--                    {{animalMap[item]}}{{item}}-->
-        <!--                </li>-->
-        <!--            </ul>-->
-        <!--        </van-popup>-->
-
         <van-dialog v-model="isGameEnd"
                     @confirm="leaveRoom"
                     confirmButtonText="离开房间"
@@ -140,6 +133,7 @@
     import PieceList from '../components/Piece.vue'
     import {mapState} from 'vuex'
 
+    const R = 100;
     export default {
         name: "chess",
         data() {
@@ -353,10 +347,12 @@
                             x: x,
                             y: y
                         };
-                        this.pieceListPos = {
+
+
+                        this.pieceListPos = this.updatePos({
                             x: e.clientX,
                             y: e.clientY + document.documentElement.scrollTop
-                        };
+                        });
                         this.isShowPiece = true;
                         break;
                     case GAME_STATUS.PLAYING:
@@ -435,10 +431,24 @@
             },
             join(x, y) {
                 return x + '-' + y
+            },
+            // 点击位置：边界情况处理
+            updatePos(point) {
+                const viewW = screen.width;
+                if (point.x < R) {
+                    point.x = R
+                    point.x = R
+                } else if (point.x > viewW - R) {
+                    point.x = viewW - R;
+                }
+
+                if (point.y < R) {
+                    point.y = R;
+                }
+                return point;
             }
         },
         mounted() {
-            // this.userId = parseInt(this.$route.query.user_id);
             this.$ws.addEventListener('message', (event) => {
                 let {type, raw} = JSON.parse(event.data);
                 switch (type) {
@@ -535,10 +545,10 @@
                         // 走棋提示
                         this.from = raw.from;
                         this.to = raw.to;
-                        setTimeout(() => {
-                            this.from = '';
-                            this.to = '';
-                        }, this.timeout);
+                        // setTimeout(() => {
+                        //     this.from = '';
+                        //     this.to = '';
+                        // }, this.timeout);
                         switch (raw.fit_result) {
                             case FIT_STATUS.BOTH_DIE:
                                 console.log('both die');
@@ -644,10 +654,10 @@
                         let targetDom = document.querySelector('.is-selected');
                         if (targetDom) {
                             let rect = targetDom.getBoundingClientRect();
-                            this.pieceListPos = {
+                            this.pieceListPos = this.updatePos({
                                 x: rect.x + 8,
                                 y: rect.y + 8 + document.documentElement.scrollTop
-                            }
+                            })
                         }
                     }, 500);
                 }
@@ -672,17 +682,21 @@
 <style lang="scss">
     $board-color: #999;
     $is-canMove: #7aff6d;
-    $pos-list: (pos-1, '鼠', skyblue),
-            (pos-2, '猫', pink),
-            (pos-3, '狗', #ff92c1),
-            (pos-4, '狼', #ff76d3),
-            (pos-5, '豹', #42b983),
-            (pos-6, '虎', gray),
-            (pos-7, '狮', green),
-            (pos-8, '象', orange);
+    $other-piece: #7d5a5a;
 
-    $p1-color: blue;
-    $p2-color: red;
+    $p1-color: #00a1ab;
+    $p2-color: #bb3b0e;
+    $active-color: #a8df65;
+
+    $pos-list: (pos-1, '鼠'),
+            (pos-2, '猫'),
+            (pos-3, '狗'),
+            (pos-4, '狼'),
+            (pos-5, '豹'),
+            (pos-6, '虎'),
+            (pos-7, '狮'),
+            (pos-8, '象');
+
     .chess-board {
         width: 60vh;
         margin: 5vh auto;
@@ -791,8 +805,7 @@
             }
 
             &.is-selected {
-                /*border: 2px solid #42b983;*/
-                box-shadow: 0 3px 6px 5px #42b983;
+                box-shadow: 0 3px 6px 5px $active-color!important;
             }
 
             &.is-canMove {
@@ -838,7 +851,9 @@
     }
 
     .other-piece {
-        background-color: skyblue !important;
+        width: 30px !important;
+        height: 30px !important;
+        background-color: $other-piece !important;
     }
 
 
@@ -846,12 +861,12 @@
         .row {
             @include circle($p2-color);
 
-            &:first-child {
-                .circle.is-top-left,
-                .circle.is-top-right {
-                    background: orange;
-                }
-            }
+            /*&:first-child {*/
+            /*    .circle.is-top-left,*/
+            /*    .circle.is-top-right {*/
+            /*        background: orange;*/
+            /*    }*/
+            /*}*/
 
             &:last-child {
                 .is-bottom-right,
@@ -875,12 +890,12 @@
                 }
             }
 
-            &:last-child {
-                .circle.is-bottom-left,
-                .circle.is-bottom-right {
-                    background: orange;
-                }
-            }
+            /*&:last-child {*/
+            /*    .circle.is-bottom-left,*/
+            /*    .circle.is-bottom-right {*/
+            /*        background: orange;*/
+            /*    }*/
+            /*}*/
         }
     }
 
@@ -907,24 +922,6 @@
     @include lairCaveCircle(lair, '兽穴');
     @include lairCaveCircle(cave, '山洞');
 
-    .piece-list {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    .piece-item {
-        padding: 20px;
-        border: 1px solid #eee;
-        margin: 10px;
-        border-radius: 50%;
-        cursor: pointer;
-
-        &:hover {
-            background-color: #42b983;
-            color: #fff;
-        }
-    }
 
     .app-header {
         padding: 5px 0;

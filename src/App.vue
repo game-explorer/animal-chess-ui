@@ -41,7 +41,8 @@
                     const res = await getUserIdApi();
                     console.log('res', res);
                     this.userId = res.data.id;
-                    Vue.prototype.$ws = new WebSocket(this.userId);
+                    const path = "ws://192.168.1.80:9000/ws?player_id=" + this.userId;
+                    Vue.prototype.$ws = new WebSocket(path)
                     this.isReady = true;
                     this.setUserId(this.userId);
 

@@ -29,13 +29,5 @@ console.log('query', query);
 new Vue({
     router,
     store,
-    sockets: {
-        connect: function () {
-            console.log('socket connected')
-        },
-        customEmit: function () {
-            console.log('this method was fired by the socket server. eg: io.emit("customEmit", data)')
-        }
-    },
     render: h => h(App),
 }).$mount('#app');
